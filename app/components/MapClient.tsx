@@ -43,12 +43,14 @@ export default function MapClient({
 	zoom = 4,
 	circleCenter = null,
 	circleRadiusM = null,
+	fullScreen = false,
 }: {
 	locations: Location[];
 	center?: Location;
 	zoom?: number;
 	circleCenter?: Location | null;
 	circleRadiusM?: number | null;
+	fullScreen?: boolean;
 }) {
 	const mapRef = useRef<HTMLDivElement | null>(null);
 	const markersRef = useRef<any[]>([]);
@@ -137,14 +139,36 @@ export default function MapClient({
 	}, [locations, center, zoom]);
 
 	return (
-		<div>
+		<div style={{ position: "relative" }}>
 			{!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ? (
 				<div className="alert alert-warning">
 					Missing <code>NEXT_PUBLIC_GOOGLE_MAPS_API_KEY</code> — set
 					it in your environment to load the interactive map.
 				</div>
 			) : null}
-			<div ref={mapRef} style={{ width: "100%", height: 500 }} />
+
+			{/* overlay: show first location title if available */}
+			{locations && locations[0] && locations[0].title ? (
+				<div
+					style={{
+						position: "absolute",
+						top: 10,
+						left: 10,
+						zIndex: 2000,
+						background: "rgba(255,255,255,0.9)",
+						padding: "6px 10px",
+						borderRadius: 6,
+						boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
+					}}
+				>
+					<strong>{locations[0].title}</strong>
+				</div>
+			) : null}
+
+			<div
+				ref={mapRef}
+				style={{ width: "100%", height: fullScreen ? "100vh" : 500 }}
+			/>
 		</div>
 	);
 }
