@@ -81,6 +81,13 @@ export default function MapClient({
 				const map = new google.maps.Map(mapRef.current, {
 					center: mapCenter,
 					zoom,
+					// Disable default UI handlers so we can provide a custom UI
+					disableDefaultUI: true,
+					clickableIcons: false,
+					streetViewControl: false,
+					fullscreenControl: false,
+					mapTypeControl: false,
+					zoomControl: false,
 				});
 
 				// clear any previous markers
