@@ -397,9 +397,28 @@ export default function SearchControls({
 			<button
 				type="button"
 				className="btn btn-outline-secondary btn-md"
-				onClick={handleSearch}
+				onClick={() => {
+					// clear inputs
+					setLocation("");
+					setSpecies("");
+					// clear suggestion lists and selected place
+					setSuggestions([]);
+					setSpeciesSuggestions([]);
+					setSelectedPlace(null);
+					// reset loading states
+					setLoading(false);
+					setSpeciesLoading(false);
+					// reset applied filters and close filter panel if open
+					setAppliedFilters({
+						categories: [],
+						dateFrom: null,
+						dateTo: null,
+					});
+					setFiltersOpen(false);
+				}}
+				disabled={!location && !species && filterCount === 0}
 			>
-				<i className="bi bi-search-heart"></i>
+				<i className="bi bi-trash"></i>
 			</button>
 
 			<button
