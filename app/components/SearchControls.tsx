@@ -90,6 +90,11 @@ export default function SearchControls({
 	}>({ categories: [], dateFrom: null, dateTo: null });
 	const filterAnchorRef = useRef<HTMLDivElement | null>(null);
 
+	// compute a simple filter count: number of categories + 1 if dateFrom/dateTo set
+	const filterCount =
+		(appliedFilters?.categories?.length ?? 0) +
+		(appliedFilters?.dateFrom || appliedFilters?.dateTo ? 1 : 0);
+
 	function handleFilterClick() {
 		setFiltersOpen((s) => !s);
 	}
@@ -411,13 +416,26 @@ export default function SearchControls({
 			<div ref={filterAnchorRef}>
 				<button
 					type="button"
-					className="btn btn-outline-secondary btn-md d-flex align-items-center text-nowrap"
+					className="btn btn-outline-secondary btn-md d-flex align-items-center text-nowrap position-relative"
 					onClick={handleFilterClick}
 					aria-label="Filters"
 					title="Filters"
 				>
 					<i className="bi bi-filter"></i>
 					<span className="ms-2">Filters</span>
+					{filterCount > 0 && (
+						<span
+							className="badge bg-danger"
+							style={{
+								position: "absolute",
+								top: -6,
+								right: -6,
+								fontSize: 11,
+							}}
+						>
+							{filterCount}
+						</span>
+					)}
 				</button>
 				{/* Filter modal anchored to this button */}
 				<FilterModal
