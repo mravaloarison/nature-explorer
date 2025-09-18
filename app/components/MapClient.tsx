@@ -81,7 +81,6 @@ export default function MapClient({
 				const map = new google.maps.Map(mapRef.current, {
 					center: mapCenter,
 					zoom,
-					// Disable default UI handlers so we can provide a custom UI
 					disableDefaultUI: true,
 					clickableIcons: false,
 					streetViewControl: false,
@@ -90,10 +89,36 @@ export default function MapClient({
 					zoomControl: false,
 				});
 
-				// clear any previous markers
-				markersRef.current.forEach((m) => m.setMap(null));
+				// cleanup previous overlays
+				markersRef.current.forEach((m) => {
+					try {
+						if (!m) return;
+						if ((m as any).object) {
+							const wrapper = m as any;
+							if (Array.isArray(wrapper.listeners)) {
+								wrapper.listeners.forEach(
+									(lst: any) =>
+										lst &&
+										typeof lst.remove === "function" &&
+										lst.remove()
+								);
+							}
+							if (
+								wrapper.object &&
+								typeof wrapper.object.setMap === "function"
+							)
+								wrapper.object.setMap(null);
+							return;
+						}
+						if (typeof (m as any).setMap === "function")
+							(m as any).setMap(null);
+					} catch (e) {
+						// ignore
+					}
+				});
 				markersRef.current = [];
 
+				// render explicit markers (if any)
 				locations.forEach((loc) => {
 					const marker = new google.maps.Marker({
 						position: { lat: loc.lat, lng: loc.lng },
@@ -103,7 +128,6 @@ export default function MapClient({
 					markersRef.current.push(marker);
 				});
 
-				// If many markers, fit to bounds
 				if (locations.length > 1) {
 					const bounds = new google.maps.LatLngBounds();
 					locations.forEach((l) =>
@@ -112,22 +136,81 @@ export default function MapClient({
 					map.fitBounds(bounds);
 				}
 
-				// Draw circle if requested
+				// Draw an editable rectangle if requested
 				if (circleCenter && circleRadiusM) {
-					const circle = new google.maps.Circle({
+					const metersToLat = (m: number) => m / 111000;
+					const metersToLng = (m: number, lat: number) =>
+						m / (111000 * Math.cos((lat * Math.PI) / 180));
+
+					const latDelta = metersToLat(circleRadiusM);
+					const lngDelta = metersToLng(
+						circleRadiusM,
+						circleCenter.lat
+					);
+
+					const sw = new google.maps.LatLng(
+						circleCenter.lat - latDelta,
+						circleCenter.lng - lngDelta
+					);
+					const ne = new google.maps.LatLng(
+						circleCenter.lat + latDelta,
+						circleCenter.lng + lngDelta
+					);
+					const bounds = new google.maps.LatLngBounds(sw, ne);
+
+					const rectangle = new google.maps.Rectangle({
+						bounds,
+						editable: true,
+						draggable: true,
 						strokeColor: "#3388ff",
 						strokeOpacity: 0.8,
 						strokeWeight: 2,
 						fillColor: "#3388ff",
-						fillOpacity: 0.15,
+						fillOpacity: 0.12,
 						map,
-						center: {
+					});
+
+					const logBounds = () => {
+						try {
+							const b = rectangle.getBounds();
+							if (!b) return;
+							const ne = b.getNorthEast();
+							const sw = b.getSouthWest();
+							console.log("Rectangle bounds:", {
+								north: ne.lat(),
+								east: ne.lng(),
+								south: sw.lat(),
+								west: sw.lng(),
+							});
+						} catch (e) {
+							console.error(e);
+						}
+					};
+
+					const bListener = rectangle.addListener(
+						"bounds_changed",
+						() => logBounds()
+					);
+					const dListener = rectangle.addListener("dragend", () =>
+						logBounds()
+					);
+
+					markersRef.current.push({
+						object: rectangle,
+						listeners: [bListener, dListener],
+					});
+
+					try {
+						map.fitBounds(bounds);
+					} catch (e) {
+						console.warn("fitBounds failed", e);
+						map.panTo({
 							lat: circleCenter.lat,
 							lng: circleCenter.lng,
-						},
-						radius: circleRadiusM,
-					});
-					markersRef.current.push(circle);
+						});
+					}
+
+					logBounds();
 				}
 			})
 			.catch((err) => console.error(err));
@@ -136,7 +219,26 @@ export default function MapClient({
 			mounted = false;
 			markersRef.current.forEach((m) => {
 				try {
-					if (m && typeof m.setMap === "function") m.setMap(null);
+					if (!m) return;
+					if ((m as any).object) {
+						const wrapper = m as any;
+						if (Array.isArray(wrapper.listeners)) {
+							wrapper.listeners.forEach(
+								(lst: any) =>
+									lst &&
+									typeof lst.remove === "function" &&
+									lst.remove()
+							);
+						}
+						if (
+							wrapper.object &&
+							typeof wrapper.object.setMap === "function"
+						)
+							wrapper.object.setMap(null);
+						return;
+					}
+					if (typeof (m as any).setMap === "function")
+						(m as any).setMap(null);
 				} catch (e) {
 					// ignore
 				}

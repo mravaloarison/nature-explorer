@@ -36,14 +36,9 @@ export default function Home() {
 				<div style={{ flex: 1 }}>
 					<SearchControls
 						onSelectLocation={(p) => {
+							// Only set the rectangle bounds; do not add a marker/title overlay
 							if (p.location) {
-								setLocations([
-									{
-										lat: p.location.lat,
-										lng: p.location.lng,
-										title: p.name || p.formatted_address,
-									},
-								]);
+								setLocations([]); // clear any markers or overlay text
 								setCircle({
 									center: p.location,
 									radius: p.radius_m || 8046.72,

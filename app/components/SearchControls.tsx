@@ -398,17 +398,13 @@ export default function SearchControls({
 				type="button"
 				className="btn btn-outline-secondary btn-md"
 				onClick={() => {
-					// clear inputs
 					setLocation("");
 					setSpecies("");
-					// clear suggestion lists and selected place
 					setSuggestions([]);
 					setSpeciesSuggestions([]);
 					setSelectedPlace(null);
-					// reset loading states
 					setLoading(false);
 					setSpeciesLoading(false);
-					// reset applied filters and close filter panel if open
 					setAppliedFilters({
 						categories: [],
 						dateFrom: null,
