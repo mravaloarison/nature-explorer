@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import FilterModal from "./FilterModal";
 
 export default function SearchControls({
 	onSelectLocation,
@@ -81,9 +82,26 @@ export default function SearchControls({
 		console.log("Ask AI", { species, location });
 	}
 
+	const [filtersOpen, setFiltersOpen] = useState(false);
+	const [appliedFilters, setAppliedFilters] = useState<{
+		categories: string[];
+		dateFrom?: string | null;
+		dateTo?: string | null;
+	}>({ categories: [], dateFrom: null, dateTo: null });
+	const filterAnchorRef = useRef<HTMLDivElement | null>(null);
+
 	function handleFilterClick() {
-		// Placeholder for filter action (open modal or drawer).
-		console.log("Filter clicked");
+		setFiltersOpen((s) => !s);
+	}
+
+	function handleApplyFilters(filters: {
+		categories: string[];
+		dateFrom?: string | null;
+		dateTo?: string | null;
+	}) {
+		setAppliedFilters(filters);
+		setFiltersOpen(false);
+		console.log("Applied filters", filters);
 	}
 
 	function selectPrediction(p: any) {
@@ -390,16 +408,34 @@ export default function SearchControls({
 				<span className="ms-2">Ask&nbsp;AI</span>
 			</button>
 
-			<button
-				type="button"
-				className="btn btn-outline-secondary btn-md d-flex align-items-center text-nowrap"
-				onClick={handleFilterClick}
-				aria-label="Filters"
-				title="Filters"
-			>
-				<i className="bi bi-filter"></i>
-				<span className="ms-2">Filters</span>
-			</button>
+			<div ref={filterAnchorRef}>
+				<button
+					type="button"
+					className="btn btn-outline-secondary btn-md d-flex align-items-center text-nowrap"
+					onClick={handleFilterClick}
+					aria-label="Filters"
+					title="Filters"
+				>
+					<i className="bi bi-filter"></i>
+					<span className="ms-2">Filters</span>
+				</button>
+				{/* Filter modal anchored to this button */}
+				<FilterModal
+					open={filtersOpen}
+					onClose={() => setFiltersOpen(false)}
+					anchorRef={filterAnchorRef}
+					onApply={handleApplyFilters}
+					onClear={() => {
+						setAppliedFilters({
+							categories: [],
+							dateFrom: null,
+							dateTo: null,
+						});
+						setFiltersOpen(false);
+					}}
+					initial={appliedFilters}
+				/>
+			</div>
 		</div>
 	);
 }
